@@ -1,0 +1,60 @@
+plugins {
+    id 'java'
+}
+
+group 'galvi.cucumber'
+
+String CUCUMBER_VERSION = '5.7.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'io.cucumber', name: 'cucumber-java', version: CUCUMBER_VERSION
+    testCompile group: 'io.cucumber', name: 'cucumber-picocontainer', version: CUCUMBER_VERSION
+
+    compile 'org.slf4j:slf4j-api:1.7.25'
+    compile 'ch.qos.logback:logback-classic:1.2.3'
+}
+
+task cucumberPrimary {
+    doLast {
+        String cucumberTags = System.getProperty('cucumberTags', '@primaryDefault')
+
+        cucumberTestRunner('galvi.primary.cucumber', cucumberTags)
+    }
+}
+
+task cucumberSecondary {
+    doLast {
+        String cucumberTags = System.getProperty('cucumberTags', '@secondaryDefault')
+
+        cucumberTestRunner('galvi.secondary.cucumber', cucumberTags, ['--threads', '2'])
+    }
+}
+
+void cucumberTestRunner(String glue, String cucumberTags = '', List<String> cucumberArgs = []) {
+    println("\n\nRun tests with tags: ${cucumberTags}")
+    if (!cucumberArgs.isEmpty()) {
+        println("Additional args: ${cucumberArgs.toString()}")
+    }
+
+    String additionalTags = cucumberTags ? " and ${cucumberTags}" : ''
+
+    javaexec {
+        main = 'io.cucumber.core.cli.Main'
+        classpath += files(configurations.testRuntime.files, sourceSets.test.output.getFiles(), sourceSets.main.output.getFiles())
+        args = cucumberArgs +
+                ['--tags', "not @ignore ${additionalTags}",
+                 '--plugin', 'pretty',
+                 '--monochrome',
+                 '--no-strict',
+                 '--glue', glue,
+                 '--plugin', "junit:build/reports/cucumber/${System.currentTimeMillis()}.xml",
+                 '--plugin', "json:build/reports/cucumber/${System.currentTimeMillis()}.json",
+                 '--plugin', 'html:build/reports/cucumber/html-report',
+                 'src/test/resources/cucumber']
+        systemProperties = System.getProperties()
+    }
+}
