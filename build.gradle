@@ -31,9 +31,20 @@ subprojects {
 
     // Copy feature files to all projects except CommonFeatures
     if (!((it as Project).name == 'CommonFeatures')) {
-        task copyFeatures(type: Copy) {
+        task copyFeatures(type: Sync) {
+            final String dstDir = 'src/test/resources/cucumber/common'
+            doFirst {
+                new File(dstDir).eachFileRecurse {
+                    it.setWritable(true)
+                }
+            }
             from Paths.get(project(':CommonFeatures').projectDir.path, 'src/test/resources/')
-            into 'src/test/resources/cucumber/common'
+            into dstDir
+            doLast {
+                new File(dstDir).eachFileRecurse {
+                    it.setReadOnly()
+                }
+            }
         }
 
         processTestResources.dependsOn(copyFeatures)
