@@ -1,1 +1,9 @@
 description = 'Primary step definitions implementation'
+
+task cucumber(dependsOn: testClasses) {
+    String cucumberTags = System.getProperty('cucumberTags', '@primaryDefault')
+
+    doLast {
+        cucumberTestRunner(cucumberTags)
+    }
+}

@@ -4,3 +4,11 @@ dependencies {
     compile 'org.slf4j:slf4j-api:1.7.25'
     compile 'ch.qos.logback:logback-classic:1.2.3'
 }
+
+task cucumber(dependsOn: testClasses) {
+    doLast {
+        String cucumberTags = System.getProperty('cucumberTags', '@secondaryDefault')
+
+        cucumberTestRunner(cucumberTags, ['--threads', '2'])
+    }
+}
