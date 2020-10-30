@@ -1,0 +1,65 @@
+import java.nio.file.Paths
+
+plugins {
+    id 'com.dorongold.task-tree' version '1.5'
+}
+
+String CUCUMBER_VERSION = '5.7.0'
+
+allprojects {
+    group 'galvi.cucumber'
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    compileJava.options.encoding = 'UTF-8'
+    compileTestJava.options.encoding = 'UTF-8'
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+
+    dependencies {
+        testCompile group: 'io.cucumber', name: 'cucumber-java', version: CUCUMBER_VERSION
+        testCompile group: 'io.cucumber', name: 'cucumber-picocontainer', version: CUCUMBER_VERSION
+    }
+
+    // Copy feature files to all projects except CommonFeatures
+    if (!((it as Project).name == 'CommonFeatures')) {
+        task copyFeatures(type: Copy) {
+            from Paths.get(project(':CommonFeatures').projectDir.path, 'src/test/resources/')
+            into 'src/test/resources/cucumber/common'
+        }
+
+        processTestResources.dependsOn(copyFeatures)
+
+        clean {
+            delete('src/test/resources/cucumber/common')
+        }
+
+        task cucumber(dependsOn: testClasses) {
+            doLast {
+                javaexec {
+                    main = 'io.cucumber.core.cli.Main'
+                    classpath += files(configurations.testRuntime.files, sourceSets.test.output.getFiles(), sourceSets.main.output.getFiles())
+                    args = [
+                            '--tags', 'not @ignore',
+                            '--plugin', 'pretty',
+                            '--monochrome',
+                            '--no-strict',
+                            '--glue', 'galvi',
+                            '--plugin', "junit:build/reports/cucumber/${System.currentTimeMillis()}.xml",
+                            '--plugin', "json:build/reports/cucumber/${System.currentTimeMillis()}.json",
+                            '--plugin', 'html:build/reports/cucumber/html-report',
+                            'src/test/resources/cucumber']
+                    systemProperties = System.getProperties()
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,5 @@
+rootProject.name = 'CommonCucumberFeatures'
+
+include 'CommonFeatures'
+include 'PrimaryStepDefinitions'
+include 'SecondaryStepDefinitions'
